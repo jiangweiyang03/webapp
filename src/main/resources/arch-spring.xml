@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/mvc 
+		http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+		http://www.springframework.org/schema/task 
+		http://www.springframework.org/schema/task/spring-task-4.0.xsd
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		http://www.springframework.org/schema/aop 
+     http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<!-- 加载配置文件路径 -->
+	<context:property-placeholder order="1"
+		location="classpath:config.properties" ignore-unresolvable="true"
+		ignore-resource-not-found="true" />
+
+	<!-- 服务器中预留配置 <context:property-placeholder order="2" location="file:/home/work/var/conf/aps-core/config.properties" 
+		ignore-unresolvable="true" ignore-resource-not-found="true" /> -->
+
+	<task:annotation-driven />
+
+	<mvc:interceptors>
+		<bean class="com.yousoft.cfapi.util.Interceptor" />
+	</mvc:interceptors>
+
+	<bean
+		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" />
+	<bean
+		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- MyBatis configuation -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="mapperLocations" value="classpath*:com/yousoft/cfapi/dao/*.xml" />
+	</bean>
+
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.yousoft.cfapi.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${arch.jdbc.driver}" />
+		<property name="maxActive" value="${arch.jdbc.maxActive}" />
+		<property name="url" value="${arch.jdbc.url}" />
+		<property name="username" value="${arch.jdbc.username}" />
+		<property name="password" value="${arch.jdbc.password}" />
+		<property name="defaultAutoCommit" value="${arch.datasource.defaultAutoCommit}" />
+		<property name="initialSize" value="${arch.datasource.initialSize}" />
+		<property name="maxIdle" value="${arch.datasource.maxIdle}" />
+		<property name="minIdle" value="${arch.datasource.minIdle}" />
+		<property name="maxWait" value="${arch.datasource.maxWait}" />
+		<property name="testWhileIdle" value="${arch.datasource.testWhileIdle}" />
+		<property name="testOnBorrow" value="${arch.datasource.testOnBorrow}" />
+		<property name="testOnReturn" value="${arch.datasource.testOnReturn}" />
+		<property name="validationQuery" value="${arch.datasource.validationQuery}" />
+		<property name="timeBetweenEvictionRunsMillis"
+			value="${arch.datasource.timeBetweenEvictionRunsMillis}" />
+		<property name="minEvictableIdleTimeMillis"
+			value="${arch.datasource.minEvictableIdleTimeMillis}" />
+		<property name="logAbandoned" value="${arch.datasource.logAbandoned}" />
+		<property name="removeAbandoned" value="${arch.datasource.removeAbandoned}" />
+		<property name="removeAbandonedTimeout" value="${arch.datasource.removeAbandonedTimeout}" />
+	</bean>
+
+	<aop:config>
+		<aop:pointcut
+			expression="execution(public * com.yousoft.cfapi.service.impl.*Impl.*(..))"
+			id="pointcut" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut" />
+	</aop:config>
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="query*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="find*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="modify*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+
+	<context:annotation-config />
+
+	<!-- 使用annotation 自动注册bean, 并保证@Required、@Autowired的属性被注入 -->
+	<context:component-scan base-package="com.yousoft.cfapi">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Component" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Service" />
+	</context:component-scan>
+
+
+	<!-- 处理配置常量类 -->
+	<bean id="archConfig" class="com.yousoft.cfapi.ArchConfig">
+		<property name="AdminUserID" value="${AdminUserID}" />
+	</bean>
+
+</beans>
