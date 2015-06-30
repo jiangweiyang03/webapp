@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd" >
 <generatorConfiguration>
-	<classPathEntry location="/Users/jiangwy/Documents/jiangwy/develop/ojdbc14-10.2.0.4.0.jar"/>
+	<classPathEntry location="D:\soft\mvn_repository\com\oracle\ojdbc14\10.2.0.4.0\ojdbc14-10.2.0.4.0.jar"/>
 	<context id="context1">
-		<jdbcConnection driverClass="Oracle.jdbc.driver.OracleDriver"
+		<jdbcConnection driverClass="oracle.jdbc.OracleDriver"
 			connectionURL="jdbc:oracle:thin:@104.238.236.144:1521:orcl" userId="api"
 			password="api" />
 		<javaModelGenerator targetPackage="com.yousoft.cfapi.entity"
@@ -12,6 +12,6 @@
 			targetProject="cfapi" />
 		<javaClientGenerator targetPackage="com.yousoft.cfapi.dao"
 			targetProject="cfapi" type="XMLMAPPER" />
-		<table schema="API" tableName="PUBCONTENT"></table>
+		<table schema="API" tableName="relation"></table>
 	</context>
 </generatorConfiguration> 
