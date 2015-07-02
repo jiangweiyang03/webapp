@@ -51,5 +51,14 @@ public interface ContentService {
 	 * @return 消息详情
 	 */
 	public ContentView findContentDetails(String textid);
+	
+	/**
+	 * 根据用户ID查询其最新消息数
+	 * @param userid 用户ID
+	 * @return 消息总数
+	 */
+	public int countNews(String userid);
+	
+	
 
 }

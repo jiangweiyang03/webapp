@@ -125,7 +125,14 @@
 
 	<!-- 处理配置常量类 -->
 	<bean id="archConfig" class="com.yousoft.cfapi.ArchConfig">
-		<property name="AdminUserID" value="${AdminUserID}" />
+		<property name="RedisAddr" value="${RedisAddr}" />
+		<property name="RedisPort" value="${RedisPort}" />
+		<property name="AuthValue" value="${AuthValue}" />
+		<property name="MaxActive" value="${MaxActive}" />
+		<property name="MaxIdel" value="${MaxIdel}" />
+		<property name="MaxWait" value="${MaxWait}" />
+		<property name="TimeOut" value="${TimeOut}" />
+		<property name="TestOnBorrow" value="${TestOnBorrow}" />
 	</bean>
 
 </beans>

@@ -12,6 +12,6 @@
 			targetProject="cfapi" />
 		<javaClientGenerator targetPackage="com.yousoft.cfapi.dao"
 			targetProject="cfapi" type="XMLMAPPER" />
-		<table schema="API" tableName="relation"></table>
+		<table schema="API" tableName="NEWSDETAIL"></table>
 	</context>
 </generatorConfiguration> 

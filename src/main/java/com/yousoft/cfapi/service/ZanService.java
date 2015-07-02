@@ -2,14 +2,11 @@ package com.yousoft.cfapi.service;
 
 import java.util.List;
 
-import com.yousoft.cfapi.entity.Zandetail;
-
 /**
  * 赞接口
  * @author jiangweiyang01
  */
 public interface ZanService {
-	
 	
 	/**
 	 * 根据消息ID查询所有点赞用户ID集合
@@ -19,10 +16,17 @@ public interface ZanService {
 	public List<String> findUserIdListByTextId(String textid);
 	
 	/**
-	 * 根据文本ID获取所有的点赞信息
-	 * @param textid 内容ID
-	 * @return
+	 * 为消息点赞
+	 * @param textid 消息ID
+	 * @param userid 当前赞的用户ID
 	 */
-	public List<Zandetail> getZanDetailsByTextId(String textid);
-
+	public void addZan(String textid,String userid);
+	
+	/**
+	 * 取消消息赞
+	 * @param textid 消息ID
+	 * @param userid 当前取消赞的用户ID
+	 */
+	public void cancleZan(String textid,String userid);
+	
 }

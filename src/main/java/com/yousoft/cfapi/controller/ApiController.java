@@ -1,6 +1,9 @@
 package com.yousoft.cfapi.controller;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yousoft.cfapi.entity.model.ContentView;
 import com.yousoft.cfapi.entity.model.FriendPageView;
+import com.yousoft.cfapi.entity.model.NewsView;
 import com.yousoft.cfapi.service.ContentService;
 import com.yousoft.cfapi.service.PlService;
+import com.yousoft.cfapi.service.RedisService;
+import com.yousoft.cfapi.service.ZanService;
+import com.yousoft.cfapi.util.TimeUtils;
 
 /**
  * 朋友圈开放接口
@@ -29,6 +36,10 @@ public class ApiController extends AbstractArchController {
 	private ContentService contentService;
 	@Autowired
 	private PlService plService;
+	@Autowired
+	private ZanService zanService;
+	@Autowired
+	private RedisService redisService;
 
 	/**
 	 * 内容发布接口
@@ -185,8 +196,68 @@ public class ApiController extends AbstractArchController {
 	public Object claim(
 			@RequestParam(value = "zantype", required = false) String zantype,
 			@RequestParam(value = "textid", required = false) String textid,
+			@RequestParam(value = "usersrc", required = false) String usersrc) {
+		if (StringUtils.isEmpty(zantype)) {
+			return error("评论类型字段不能为空");
+		} else if (StringUtils.isEmpty(textid)) {
+			return error("评论对应的消息ID不能为空");
+		} else if (StringUtils.isEmpty(usersrc)) {
+			return error("评论人/回复人不能为空");
+		} else {
+			if ("0".equals(zantype)) {
+				// 点赞
+				zanService.addZan(textid, usersrc);
+				return success("点赞处理成功");
+			} else if ("1".equals(zantype)) {
+				// 取消赞
+				zanService.cancleZan(textid, usersrc);
+				return success("取消赞处理成功");
+			} else {
+				return error("提交的类型参数不正确:" + zantype);
+			}
+
+		}
+	}
+
+	@RequestMapping(value = "/news")
+	@ResponseBody
+	public Object news(
+			@RequestParam(value = "userid", required = false) String userid) {
+		if (StringUtils.isEmpty(userid)) {
+			return error("传入的用户ID不能为空");
+		} else {
+			List<NewsView> newsViewList = redisService.findNewsViewList(userid);
+			if (newsViewList == null || newsViewList.size() < 1) {
+				return error("0");
+			} else {
+				// 修改时间
+				for (NewsView newsView : newsViewList) {
+					newsView.setNewtime(TimeUtils.formatTime(new Date(Long
+							.valueOf(newsView.getNewtime()))));
+				}
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("newnum", newsViewList.size());
+				map.put("newlist", newsViewList);
+				return map;
+			}
+		}
+	}
+
+	@RequestMapping(value = "/privilege")
+	@ResponseBody
+	public Object privilege(
 			@RequestParam(value = "usersrc", required = false) String usersrc,
-			@RequestParam(value = "userdest", required = false) String userdest) {
+			@RequestParam(value = "userdest", required = false) String userdest,
+			@RequestParam(value = "pritype", required = false) String pritype,
+			@RequestParam(value = "privalue", required = false) String privalue) {
+		if (StringUtils.isEmpty(usersrc) || StringUtils.isEmpty(userdest)
+				|| StringUtils.isEmpty(pritype)
+				|| StringUtils.isEmpty(privalue)) {
+			return error("传入参数不正确");
+		} else {
+			
+		}
+
 		return null;
 	}
 
