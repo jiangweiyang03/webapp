@@ -39,7 +39,7 @@ public interface PlService {
 	 * @param textid
 	 * @return
 	 */
-	public List<PlView> findPlViewListByTextId(Integer textid);
+	public List<PlView> findPlViewListByTextId(Integer textid,String userid);
 	
 }
 	

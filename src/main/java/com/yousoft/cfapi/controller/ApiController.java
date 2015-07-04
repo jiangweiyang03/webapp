@@ -18,8 +18,10 @@ import com.yousoft.cfapi.entity.model.FriendPageView;
 import com.yousoft.cfapi.entity.model.NewsView;
 import com.yousoft.cfapi.service.ContentService;
 import com.yousoft.cfapi.service.PlService;
+import com.yousoft.cfapi.service.PrivilegeService;
 import com.yousoft.cfapi.service.RedisService;
 import com.yousoft.cfapi.service.ZanService;
+import com.yousoft.cfapi.util.ArchState;
 import com.yousoft.cfapi.util.TimeUtils;
 
 /**
@@ -40,6 +42,8 @@ public class ApiController extends AbstractArchController {
 	private ZanService zanService;
 	@Autowired
 	private RedisService redisService;
+	@Autowired
+	private PrivilegeService privilegeService;
 
 	/**
 	 * 内容发布接口
@@ -59,6 +63,7 @@ public class ApiController extends AbstractArchController {
 			return error("发布内容不能为空");
 		} else {
 			contentService.pubContent(content, photolist, userid);
+			redisService.addNews(userid);
 			return success("消息发布成功");
 		}
 	}
@@ -184,8 +189,10 @@ public class ApiController extends AbstractArchController {
 			if ("0".equals(commtype)) {
 				// 评论信息
 				plService.addPl(textid, usersrc, content);
+				redisService.addListValue(userdest, usersrc, content, "0", "0");
 			} else if ("1".equals(commtype)) {
 				plService.addReply(textid, usersrc, userdest, content);
+				redisService.addListValue(userdest, usersrc, content, "1", "0");
 			}
 			return success("评论/回复处理成功");
 		}
@@ -204,13 +211,16 @@ public class ApiController extends AbstractArchController {
 		} else if (StringUtils.isEmpty(usersrc)) {
 			return error("评论人/回复人不能为空");
 		} else {
+			ContentView contentView = contentService.findContentDetails(textid);
 			if ("0".equals(zantype)) {
 				// 点赞
 				zanService.addZan(textid, usersrc);
+				redisService.addListValue(contentView.getPubuserid(), usersrc, "", "2", "0");
 				return success("点赞处理成功");
 			} else if ("1".equals(zantype)) {
 				// 取消赞
 				zanService.cancleZan(textid, usersrc);
+				redisService.addListValue(contentView.getPubuserid(), usersrc, "", "2", "1");
 				return success("取消赞处理成功");
 			} else {
 				return error("提交的类型参数不正确:" + zantype);
@@ -254,11 +264,94 @@ public class ApiController extends AbstractArchController {
 				|| StringUtils.isEmpty(pritype)
 				|| StringUtils.isEmpty(privalue)) {
 			return error("传入参数不正确");
+		} else if (!"0".equals(privalue) && !"1".equals(privalue)) {
+			return error("传入的privalue值错误");
+		} else if (!"0".equals(pritype) && !"1".equals(pritype)) {
+			return error("传入的pritype值错误");
 		} else {
-			
+			// pritype 0 不看对方朋友圈 1不让对方看自己的朋友圈
+			int value = 0;
+			if ("0".equals(pritype)) {
+				value = privilegeService.proOthersList(usersrc, userdest,
+						privalue);
+			} else {
+				value = privilegeService.proSelfToOthers(usersrc, userdest,
+						privalue);
+			}
+			redisService.updatePrivilege(usersrc, userdest, pritype, privalue);
+			if (PrivilegeService.NOTFOUND == value) {
+				return error("当前用户与朋友没有朋友关系");
+			} else if (PrivilegeService.MORERELATION == value) {
+				return error("当前用户与朋友的关联关系大于1");
+			} else {
+				return success("处理成功");
+			}
 		}
+	}
 
-		return null;
+	@RequestMapping(value = "/relation")
+	@ResponseBody
+	public Object relation(
+			@RequestParam(value = "usersrc", required = false) String usersrc,
+			@RequestParam(value = "userdest", required = false) String userdest,
+			@RequestParam(value = "relvalue", required = false) String relvalue) {
+		if (StringUtils.isEmpty(usersrc) || StringUtils.isEmpty(userdest)
+				|| StringUtils.isEmpty(relvalue)) {
+			return error("传入参数不正确");
+		} else if (!"0".equals(relvalue) && !"1".equals(relvalue)) {
+			return error("传入的relvalue值错误");
+		} else {
+			// 0 取消朋友关系 1确认朋友关系
+			int value = privilegeService.relationDeal(usersrc, userdest,
+					relvalue);
+			redisService.updateRelation(usersrc, userdest, relvalue);
+			if (value == ArchState.SUCCESS.getState()) {
+				return success("处理成功");
+			} else {
+				return error("关联失败");
+			}
+		}
+	}
+
+	/**
+	 * 分享内容链接
+	 * 
+	 * @param usersrc
+	 * @param userdest
+	 * @param relvalue
+	 * @return
+	 */
+	@RequestMapping(value = "/share")
+	@ResponseBody
+	public Object share(
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "url", required = false) String url,
+			@RequestParam(value = "userid", required = false) String userid) {
+		if (StringUtils.isEmpty(title) || StringUtils.isEmpty(userid)
+				|| StringUtils.isEmpty(url)) {
+			return error("传入参数不正确");
+		} else {
+			contentService.pubSharedUrl(title, url, userid);
+			redisService.addNews(userid);
+			return success("分享链接发布成功");
+		}
+	}
+	
+	/**
+	 * 小红点,判断是否有更新的消息
+	 * @param userid	当前用户ID
+	 * @return			是否有新的消息
+	 */
+	@RequestMapping(value = "/isnews")
+	@ResponseBody
+	public Object isnews(
+			@RequestParam(value = "userid", required = false) String userid) {
+		boolean result = redisService.isNews(userid);
+		if (result){
+			return success("当前用户有新消息");
+		} else {
+			return error("当前用户无新消息");
+		}
 	}
 
 }

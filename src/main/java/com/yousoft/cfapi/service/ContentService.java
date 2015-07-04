@@ -19,6 +19,18 @@ public interface ContentService {
 	 * @return
 	 */
 	public int pubContent(String content, String photolist, String userid);
+	
+	
+	/**
+	 * 发布链接信息
+	 * @param title 	内容标题
+	 * @param url		内容图标＋转发ＵＲＬ
+	 * @param userid	当前用户ＩＤ
+	 * @return
+	 */
+	public int pubSharedUrl(String title,String url,String userid);
+	
+	
 
 	/**
 	 * 展现当前用户朋友圈列表

@@ -54,5 +54,5 @@ public interface ZandetailMapper {
 			@Param("example") ZandetailExample example);
 	
 	
-	List<String> findZanListByTextId(@Param("textid") Integer textid);
+	List<String> findZanListByTextId(@Param("textid") Integer textid,@Param("userid") String userid);
 }

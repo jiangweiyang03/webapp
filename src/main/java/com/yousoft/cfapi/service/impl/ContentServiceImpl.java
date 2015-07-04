@@ -37,6 +37,20 @@ public class ContentServiceImpl implements ContentService {
 		contentMapper.insertSelective(pubContent);
 		return 1;
 	}
+	
+	@Override
+	public int pubSharedUrl(String title, String url, String userid) {
+		Pubcontent pubContent = new Pubcontent();
+		pubContent.setText(title);
+		pubContent.setUrl(url);
+		pubContent.setPubuid(userid);
+		pubContent.setPlcount(BigDecimal.valueOf(0L));
+		pubContent.setZancount(BigDecimal.valueOf(0L));
+		contentMapper.insertSelective(pubContent);
+		return 1;
+	}
+
+
 
 	@Override
 	public List<ContentView> findUserList(String userid, int pagenum,
@@ -55,8 +69,8 @@ public class ContentServiceImpl implements ContentService {
 			ContentView view = null;
 			for (Pubcontent content : contentList) {
 				view = new ContentView(content);
-				view.setZanlist(zanService.findUserIdListByTextId(content.getCtid().toString()));
-				view.setPldetails(plService.findPlViewListByTextId(content.getCtid().intValue()));
+				view.setZanlist(zanService.findUserIdListByTextId(content.getCtid().toString(),userid));
+				view.setPldetails(plService.findPlViewListByTextId(content.getCtid().intValue(),userid));
 				viewList.add(view);
 			}
 			return viewList;
@@ -95,6 +109,12 @@ public class ContentServiceImpl implements ContentService {
 			return view;
 		}
 		return null;
+	}
+
+	@Override
+	public int countNews(String userid) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 }

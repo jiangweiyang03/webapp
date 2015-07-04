@@ -14,7 +14,7 @@ import com.yousoft.cfapi.service.PlService;
 
 @Service
 public class PlServiceImpl implements PlService {
-	
+
 	@Autowired
 	private ReplydetailMapper replyDetailMapper;
 
@@ -43,11 +43,10 @@ public class PlServiceImpl implements PlService {
 		replyDetailMapper.insertSelective(detail);
 		return 1;
 	}
-	
-	
+
 	@Override
-	public List<PlView> findPlViewListByTextId(Integer textid) {
-		return replyDetailMapper.findPlViewListByTextId(textid);
+	public List<PlView> findPlViewListByTextId(Integer textid, String userid) {
+		return replyDetailMapper.findPlViewListByTextId(textid, userid);
 	}
 
 }

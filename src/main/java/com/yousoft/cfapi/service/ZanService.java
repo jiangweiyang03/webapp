@@ -13,7 +13,7 @@ public interface ZanService {
 	 * @param textid 内容ID
 	 * @return
 	 */
-	public List<String> findUserIdListByTextId(String textid);
+	public List<String> findUserIdListByTextId(String textid,String userid);
 	
 	/**
 	 * 为消息点赞

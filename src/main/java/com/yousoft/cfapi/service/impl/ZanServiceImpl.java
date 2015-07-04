@@ -19,8 +19,8 @@ public class ZanServiceImpl implements ZanService {
 	private ZandetailMapper zanDetailMapper;
 	
 	@Override
-	public List<String> findUserIdListByTextId(String textid) {
-		return zanDetailMapper.findZanListByTextId(Integer.valueOf(textid));
+	public List<String> findUserIdListByTextId(String textid,String userid) {
+		return zanDetailMapper.findZanListByTextId(Integer.valueOf(textid),userid);
 	}
 	
 	@Override

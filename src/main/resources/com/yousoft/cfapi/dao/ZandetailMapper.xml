@@ -193,6 +193,8 @@
 	</update>
 	
 	<select id="findZanListByTextId" resultType="java.lang.String">
-		SELECT USERID FROM ZANDETAIL WHERE TEXTID = #{textid,jdbcType=Integer}
+		SELECT USERID FROM ZANDETAIL A WHERE TEXTID = #{textid,jdbcType=Integer}
+		AND EXISTS (SELECT 1 FROM RELATION B WHERE A.USERID = B.USERTO AND B.USERFROM = #{userid,jdbcType=VARCHAR} AND FLAG1 = '0') 
+	  	AND EXISTS (SELECT 1 FROM RELATION B WHERE A.USERID = B.USERFROM AND B.USERTO = #{userid,jdbcType=VARCHAR} AND FLAG2 = '0')
 	</select>
 </mapper>
