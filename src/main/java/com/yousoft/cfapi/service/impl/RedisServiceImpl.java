@@ -6,15 +6,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.ShardedJedis;
+import redis.clients.jedis.ShardedJedisPool;
 
 import com.yousoft.cfapi.entity.model.NewsView;
 import com.yousoft.cfapi.service.RedisService;
@@ -25,24 +27,15 @@ public class RedisServiceImpl extends RedisUtils implements RedisService {
 	/** 日志对象 **/
 	private static Logger logger = LoggerFactory
 			.getLogger(RedisServiceImpl.class);
-	/** 缓存对象 **/
-	private static Jedis jedis = null;
-
-	static {
-		try {
-			jedis = RedisUtils.getJedis();
-			if (jedis != null)
-				logger.info("Redid对象他建对象");
-		} catch (Exception ex) {
-			logger.error(ExceptionUtils.getFullStackTrace(ex));
-		}
-	}
+	@Autowired
+	private ShardedJedisPool shardedJedisPool = null;
 
 	@SuppressWarnings("unchecked")
 	public void addListValue(String userid, String usersrcid, String content,
 			String contenttype, String value) {
 		logger.info("cachevalue : " + userid + "," + usersrcid + "," + content
 				+ "," + contenttype + "," + value);
+		ShardedJedis jedis = shardedJedisPool.getResource();
 		if ("0".equals(contenttype)) {
 			// 评论信息
 			if (jedis.exists(userid + "_" + "pl")) {
@@ -113,10 +106,12 @@ public class RedisServiceImpl extends RedisUtils implements RedisService {
 				}
 			}
 		}
+		shardedJedisPool.returnResourceObject(jedis);
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<NewsView> findNewsViewList(String userid) {
+		ShardedJedis jedis = shardedJedisPool.getResource();
 		if (jedis.exists(userid)) {
 			String returnJson = jedis.get(userid);
 			List<NewsView> list = (List<NewsView>) JSONObject.toBean(
@@ -132,6 +127,7 @@ public class RedisServiceImpl extends RedisUtils implements RedisService {
 	@Override
 	public void addNews(String userid) {
 		String relationKey = "Relation_" + userid;
+		ShardedJedis jedis = shardedJedisPool.getResource();
 		boolean existsKey = jedis.exists(relationKey);
 		if (existsKey) {
 			String friendStr = jedis.get(relationKey);
@@ -161,6 +157,7 @@ public class RedisServiceImpl extends RedisUtils implements RedisService {
 	@Override
 	public boolean isNews(String userid) {
 		String key = "news_" + userid;
+		ShardedJedis jedis = shardedJedisPool.getResource();
 		if (jedis.exists(key)) {
 			if (StringUtils.isNotEmpty(jedis.get(key))) {
 				logger.info("news cache:+" + jedis.get(key));
@@ -175,6 +172,7 @@ public class RedisServiceImpl extends RedisUtils implements RedisService {
 	public void updatePrivilege(String userid, String userdestid,
 			String pritype, String privalue) {
 		String key = "Relation_" + userid;
+		ShardedJedis jedis = shardedJedisPool.getResource();
 		boolean existsKey = jedis.exists(key);
 		if (existsKey) {
 			if ("0".equals(pritype)) {
@@ -191,36 +189,38 @@ public class RedisServiceImpl extends RedisUtils implements RedisService {
 
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	@Override
 	public void updateRelation(String userid, String userdestid,
 			String relationtype) {
 		String key = "Relation_" + userid;
+		ShardedJedis jedis = shardedJedisPool.getResource();
 		boolean existsKey = jedis.exists(key);
-		Set<String> friendSet = null;
+		List<String> friendSet = null;
 		String viewKey = "view_" + userid + "_" + userdestid;
 		String bViewKey = "bview_" + userid + "_" + userdestid;
 		if (existsKey) {
 			// 该用户已存在朋友关联关系
 			String friendStr = jedis.get(key);
-			friendSet = (Set<String>) JSONObject.toBean(
-					JSONObject.fromObject(friendStr), Set.class);
+			friendSet = (List<String>) JSONArray.toList(JSONArray.fromObject(friendStr));
 			if ("0".equals(relationtype)) {
-				friendSet.add(userdestid);
-				jedis.set(viewKey, "0");
-				jedis.set(bViewKey, "0");
+				if(!friendSet.contains(userdestid)){
+					friendSet.add(userdestid);
+					jedis.set(viewKey, "0");
+					jedis.set(bViewKey, "0");
+				}
 			} else {
 				friendSet.remove(userdestid);
 				jedis.del(viewKey);
 				jedis.del(bViewKey);
 			}
-			jedis.set(key, JSONObject.fromObject(friendSet).toString());
+			jedis.set(key, JSONArray.fromObject(friendSet).toString());
 		} else {
 			// 该用户之间不存在朋友关系
 			if ("0".equals(relationtype)) {
-				friendSet = new HashSet<String>();
+				friendSet = new ArrayList<String>();
 				friendSet.add(userdestid);
-				jedis.set(key, JSONObject.fromObject(friendSet).toString());
+				jedis.set(key, JSONArray.fromObject(friendSet).toString());
 				jedis.set(viewKey, "0");
 				jedis.set(bViewKey, "0");
 			} else {

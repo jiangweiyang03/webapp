@@ -62,6 +62,11 @@ public class ApiController extends AbstractArchController {
 				&& StringUtils.isEmpty(photolist)) {
 			return error("发布内容不能为空");
 		} else {
+			if (StringUtils.isEmpty(content)) {
+				content = "";
+			} else if (StringUtils.isEmpty(photolist)) {
+				photolist = "";
+			}
 			contentService.pubContent(content, photolist, userid);
 			redisService.addNews(userid);
 			return success("消息发布成功");

@@ -10,7 +10,7 @@
 		<result column="PHOTO" property="photo" jdbcType="VARCHAR" />
 		<result column="URL" property="url" jdbcType="VARCHAR" />
 		<result column="PUBUID" property="pubuid" jdbcType="VARCHAR" />
-		<result column="PUBTIME" property="pubtime" jdbcType="DATE" />
+		<result column="PUBTIME" property="pubtime" jdbcType="TIMESTAMP" />
 		<result column="ZANCOUNT" property="zancount" jdbcType="DECIMAL" />
 		<result column="PLCOUNT" property="plcount" jdbcType="DECIMAL" />
 	</resultMap>
@@ -339,7 +339,7 @@
 	
 	<select id="findContentByTextId" resultMap="BaseResultMap">
 		<![CDATA[
-			SELECT * FROM PUBCONTENT WHERE CTID = #{textid,jdbcType=INTEGER}
+			SELECT * FROM PUBCONTENT WHERE CTID = #{textid}
 		]]>
 	</select>
 </mapper>

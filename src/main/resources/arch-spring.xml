@@ -26,6 +26,27 @@
 	<!-- 服务器中预留配置 <context:property-placeholder order="2" location="file:/home/work/var/conf/aps-core/config.properties" 
 		ignore-unresolvable="true" ignore-resource-not-found="true" /> -->
 
+	<!-- 配置Redis缓存服务器 -->
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxIdle" value="${MaxIdel}" />
+		<property name="maxWaitMillis" value="${MaxWait}" />
+		<property name="testOnBorrow" value="${TestOnBorrow}" />
+	</bean>
+
+	<bean id="jedisShardInfo" class="redis.clients.jedis.JedisShardInfo">
+		<constructor-arg index="0" value="${RedisAddr}" />
+		<constructor-arg index="1" value="${RedisPort}" type="int" />
+	</bean>
+
+	<bean id="shardedJedisPool" class="redis.clients.jedis.ShardedJedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1">
+			<list>
+				<ref bean="jedisShardInfo" />
+			</list>
+		</constructor-arg>
+	</bean>
+
 	<task:annotation-driven />
 
 	<mvc:interceptors>
@@ -38,7 +59,8 @@
 		class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
 		<property name="messageConverters">
 			<list>
-				<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" />
+				<bean
+					class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" />
 			</list>
 		</property>
 	</bean>
